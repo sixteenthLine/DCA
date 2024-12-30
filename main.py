@@ -12,7 +12,7 @@ nest_asyncio.apply()
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = -4695473809  #818906207 
+sender = -1002306843892 #818906207 
 
 
 async def create_table():
@@ -41,12 +41,25 @@ client = TelegramClient('main', API_ID, API_HASH)
 
 @client.on(events.NewMessage(incoming=True))
 async def handle_new_message(event):
+    if await admin_message(event):
+        return
     if event.is_private:
         await user_interaction(event)
         return 
     if event.sender_id == sender:
-        await check_new_signal(event)              
-        
+        await check_new_signal(event)  
+
+async def admin_message(event):
+    if event.text[0] == "!" and event.sender_id == 818906207:            
+        async with aiosqlite.connect('bot_stats.db') as db:
+            async with db.execute("SELECT * FROM users") as cursor:
+                rows = await cursor.fetchall() 
+                for row in rows:
+                    await client.send_message(row[0], event.text[1:])
+        return True
+    return False
+
+
 async def check_new_signal(event):
     async with aiosqlite.connect('bot_stats.db') as db:
         async with db.execute("SELECT * FROM users") as cursor:
