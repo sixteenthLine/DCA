@@ -12,7 +12,7 @@ nest_asyncio.apply()
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = -1002306843892  #818906207 
+sender = -4695473809  #818906207 
 
 
 async def create_table():
@@ -209,6 +209,7 @@ async def print_orders(id):
             message += "Похоже симуляция не может быть запущенна по данному токену"
             orders.append(message)
             memory[id].remove(socket)
+            print("Invalid token")
             continue
         if not socket.first :  
             message += "Подождиде пару секунд ордер на этот токен не успел открыться"

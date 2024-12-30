@@ -25,6 +25,7 @@ class WebSocketClient:
 
     def on_message(self, ws, message):
             data = json.loads(message)
+            print(data)
             if "msg" in data and data["msg"][0:3] == 'Not':
                 self.valid_tocken = False
                 self.disconnect()
