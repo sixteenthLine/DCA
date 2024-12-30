@@ -12,7 +12,7 @@ nest_asyncio.apply()
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = 818906207  #818906207 
+sender = -1002306843892  #818906207 
 
 
 async def create_table():
@@ -41,7 +41,8 @@ client = TelegramClient('main', API_ID, API_HASH)
 
 @client.on(events.NewMessage(incoming=True))
 async def handle_new_message(event):
-    if await user_interaction(event):
+    if event.is_private:
+        await user_interaction(event)
         return 
     if event.sender_id == sender:
         await check_new_signal(event)              
@@ -138,7 +139,9 @@ async def user_interaction(event):
                 
         await client.send_message(event.sender_id, msg)
         return True
-    return False    
+    await client.send_message(event.sender_id, "Команда не распознана. Введите -h для списка всех команд")  
+
+
 async def print_user_account(id):
      async with aiosqlite.connect('bot_stats.db') as db:
             async with db.execute('''
