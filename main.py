@@ -9,10 +9,11 @@ import aiosqlite
 
 
 nest_asyncio.apply()
+order_id = 0
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = -1002306843892 #818906207 
+sender = -1002306843892 
 
 
 async def create_table():
@@ -43,11 +44,12 @@ client = TelegramClient('main', API_ID, API_HASH)
 async def handle_new_message(event):
     if await admin_message(event):
         return
+    if event.sender_id == sender:
+        await check_new_signal(event)  
+        
     if event.is_private:
         await user_interaction(event)
         return 
-    if event.sender_id == sender:
-        await check_new_signal(event)  
 
 async def admin_message(event):
     if event.text[0] == "!" and event.sender_id == 818906207:            
@@ -64,15 +66,16 @@ async def check_new_signal(event):
     async with aiosqlite.connect('bot_stats.db') as db:
         async with db.execute("SELECT * FROM users") as cursor:
             rows = await cursor.fetchall()  
-            
+            msg = await constract_signal_message(remove_formatting(event.text))
             for row in rows: 
                 if tools.Tools.isValidMessage(remove_formatting(event.text), row[1], row[2], row[3]):
-                    await event.forward_to(row[0])
+                    print(msg)
+                    await client.send_message(row[0], msg)
                     if row[4]:
-                        #if Tools.has_mexc(message):
+                        if tools.Tools.has_mexc(event.text):
                             await add_to_memmory(row[0], remove_formatting(event.text))  
-                        #else: 
-                        # await client.send_message(event.sender_id, "невозможно запустить симуляцию. Кажется этого токена нет на MEXC")
+                        else: 
+                            await client.send_message(event.sender_id, "Внимание данного токена на на MEXC FUTURES!!!")
 
 
 async def user_interaction(event):
@@ -84,7 +87,7 @@ async def user_interaction(event):
             await update_settings(params)
             await client.send_message(event.sender_id, "Ваши настройки были успешно обновлены")
         else:
-             await client.send_message(event.sender_id, "Неправилььный формат данных!")
+             await client.send_message(event.sender_id, "Неправильный формат данных!")
         return True
     
     if event.text == "-c":
@@ -115,6 +118,8 @@ async def user_interaction(event):
 
 -q - Мониторинг открытых ордеров
 ВНИМАНИЕ: Хотя закрытие ордера при симуляции происходит автоматически вы не получаете никаких уведомлений об этом. Для того чтобы узнать закрылся ли ваш ордер используйте команду -q. Состояние ордера будет указано первой строчкой.
+                                  
+-rm - Моментально закрыть сделку. Введите -rm и через пробел id сделки(Указан вверху сообщения используйте -q чтобы узнать)
                     
 -f - FAQ
                 """)
@@ -152,7 +157,16 @@ async def user_interaction(event):
                 
         await client.send_message(event.sender_id, msg)
         return True
+    if event.text[0:3] == "-rm":
+        try : 
+            id = int(event.text.split(" ")[1])
+            await client.send_message(event.sender_id, await remove_order(event.sender_id, id))  
+        except:
+            await client.send_message(event.sender_id, "Похоже вы неправльно введи id")
+        return True
+
     await client.send_message(event.sender_id, "Команда не распознана. Введите -h для списка всех команд")  
+    return False
 
 
 async def print_user_account(id):
@@ -172,6 +186,14 @@ async def print_user_account(id):
                     msg = "У нас неи никаких фильтров используйте -a чтобы создать их"
                 return msg
             
+async def constract_signal_message(event_message):
+    message = event_message.split("GMT")[0] + "GMT"
+    if "Promo" in event_message:
+        message = event_message.split("Promo")[0] + "Amount:"+ event_message.split("Promo")[1].split("Amount:")[1].split("GMT")[0] + "GMT"
+    else :
+        message = event_message.split("GMT")[0] + "GMT"
+    
+    return message
 async def get_sholder_and_amount(id):
      async with aiosqlite.connect('bot_stats.db') as db:
             async with db.execute('''
@@ -217,7 +239,7 @@ async def print_orders(id):
     orders = [f"На данный момен открыто {len(memory[id])} сделок"]
     for socket in memory[id]:   
         message = ""
-        message += f"{socket.symbol}\n"
+        message += f"{socket.symbol}  ID: {socket.order_id}\n"
         if not socket.valid_tocken:
             message += "Похоже симуляция не может быть запущенна по данному токену"
             orders.append(message)
@@ -251,12 +273,23 @@ async def print_orders(id):
         
 
 async def add_to_memmory(id, message):
+    or_id = order_id +1
     amount, sholder = await get_sholder_and_amount(id)
-    print(str(amount) + " " + str(sholder))
-    ws = price_monitoring.start_connection(message, amount, sholder)
+    ws = price_monitoring.start_connection(message, amount, sholder, or_id)
     if id not in memory:
         memory[id] = []
     memory[id].append(ws)
+
+
+async def remove_order(user_id, id):
+    if user_id not in memory:
+        return "У вас нет открытых ордеров"
+    else:
+        for socket in memory[user_id]:
+            if socket.order_id == id:
+                socket.disconnect()
+                return "Сделка была успешно закрыта"
+    return "Ордера с таким ID не найдено"
 
 def remove_formatting(text):
     text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)  

@@ -6,7 +6,7 @@ import tools
 websocket_url = "wss://wbs.mexc.com/ws"
 
 class WebSocketClient:
-    def __init__(self, message, amount, sholder):
+    def __init__(self, message, amount, sholder, order_id):
         self.symbol = tools.Tools.getSymbol(message).upper()
         self.ws = None
         self.thread = None
@@ -15,6 +15,7 @@ class WebSocketClient:
         self.sholder = sholder
         self.amount = amount
         self.valid_tocken = True
+        self.order_id = order_id
 
         self.direction = tools.Tools.getDirection(message)
         self.last = None
@@ -25,7 +26,6 @@ class WebSocketClient:
 
     def on_message(self, ws, message):
             data = json.loads(message)
-            print(data)
             if "msg" in data and data["msg"][0:3] == 'Not':
                 self.valid_tocken = False
                 self.disconnect()
@@ -128,8 +128,8 @@ class WebSocketClient:
             self.thread.join()
         print(f"Подключение закрыто для {self.symbol}")
 
-def start_connection(message, amount, sholder):
-    client = WebSocketClient(message, amount, sholder)
+def start_connection(message, amount, sholder, order_id):
+    client = WebSocketClient(message, amount, sholder, order_id)
     print("Новый объект веб сокета успешно создан")
     client.connect()
     print("Клиент подключен")

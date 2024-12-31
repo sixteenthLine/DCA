@@ -14,8 +14,12 @@ class Tools:
         
     @staticmethod   
     def getPercentages(message):
-        percentages = float(message.split("%")[0].split(" ")[-1])
-        return percentages
+        try :
+            percentages = float(message.split("%")[0].split(" ")[-1])
+            return percentages
+
+        except :
+            return -1
     
     @staticmethod
     def isCanceledPossible(message):
@@ -41,7 +45,10 @@ class Tools:
 
     @staticmethod
     def isValidMessage(message, sum, time, price_change):
-        return Tools.getPercentages(message) >= price_change and Tools.idGoodTime(message) < time and Tools.isCanceledPossible(message) and Tools.getAmout(message) > sum
+        try :
+            return Tools.getPercentages(message) >= price_change and Tools.idGoodTime(message) < time and Tools.isCanceledPossible(message) and Tools.getAmout(message) > sum
+        except:
+            return False
 
     
     @staticmethod
