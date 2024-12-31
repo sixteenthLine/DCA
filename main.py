@@ -46,7 +46,7 @@ async def handle_new_message(event):
         return
     if event.sender_id == sender:
         await check_new_signal(event)  
-        
+        return
     if event.is_private:
         await user_interaction(event)
         return 
