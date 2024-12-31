@@ -13,7 +13,7 @@ order_id = 0
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = -1002306843892 
+sender = 818906207#-1002306843892 
 
 
 async def create_table():
@@ -273,9 +273,10 @@ async def print_orders(id):
         
 
 async def add_to_memmory(id, message):
-    or_id = order_id +1
+    global order_id
+    order_id +=1
     amount, sholder = await get_sholder_and_amount(id)
-    ws = price_monitoring.start_connection(message, amount, sholder, or_id)
+    ws = price_monitoring.start_connection(message, amount, sholder, order_id)
     if id not in memory:
         memory[id] = []
     memory[id].append(ws)
