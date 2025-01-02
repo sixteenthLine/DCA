@@ -2,6 +2,7 @@ import websocket
 import json
 import threading
 import tools
+import time
 
 websocket_url = "wss://wbs.mexc.com/ws"
 
@@ -16,6 +17,8 @@ class WebSocketClient:
         self.amount = amount
         self.valid_tocken = True
         self.order_id = order_id
+        self.time = time.time()
+        self.data = None
 
         self.direction = tools.Tools.getDirection(message)
         self.last = None
@@ -26,10 +29,8 @@ class WebSocketClient:
 
     def on_message(self, ws, message):
             data = json.loads(message)
-            if "msg" in data and data["msg"][0:3] == 'Not':
-                self.valid_tocken = False
-                self.disconnect()
-
+            self.data = data
+            self.check_status()
             if not self.first and "id" not in data:
                 self.first = float(data['d']['deals'][0]['p'])
                 print("Первые данные получены")
@@ -38,6 +39,13 @@ class WebSocketClient:
                 self.last = float(data['d']['deals'][0]['p'])
                 self.update_max_and_move_stoplose()
             return data
+    
+    def check_status(self):
+        if ("msg" in self.data and self.data["msg"][0:3] == 'Not') or (not self.first and time.time() -self.time>20):
+            self.valid_tocken = False
+            self.disconnect()
+            return True
+        return False
     
     def update_max_and_move_stoplose(self):
         if not self.max: 

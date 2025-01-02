@@ -240,11 +240,10 @@ async def print_orders(id):
     for socket in memory[id]:   
         message = ""
         message += f"{socket.symbol}  ID: {socket.order_id}\n"
-        if not socket.valid_tocken:
+        if not socket.check_status():
             message += "Похоже симуляция не может быть запущенна по данному токену"
             orders.append(message)
             memory[id].remove(socket)
-            print("Invalid token")
             continue
         if not socket.first :  
             message += "Подождиде пару секунд ордер на этот токен не успел открыться"
