@@ -13,7 +13,7 @@ order_id = 0
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = 818906207 #-1002306843892 
+sender = -1002306843892 #-1002306843892 
 
 
 async def create_table():
