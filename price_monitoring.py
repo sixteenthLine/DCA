@@ -41,7 +41,7 @@ class WebSocketClient:
             return data
     
     def check_status(self):
-        if ("msg" in self.data and self.data["msg"][0:3] == 'Not') or (not self.first and time.time() -self.time>20):
+        if ("msg" in self.data and self.data["msg"][0:3] == 'Not') or (not self.first and self.time - time.time()>20):
             self.valid_tocken = False
             self.disconnect()
             return True

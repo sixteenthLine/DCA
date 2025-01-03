@@ -13,7 +13,7 @@ order_id = 0
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = -1002306843892 
+sender = 818906207 #-1002306843892 
 
 
 async def create_table():
@@ -47,11 +47,18 @@ async def handle_new_message(event):
     if event.sender_id == sender:
         await check_new_signal(event)  
         return
-    if event.is_private:
-        await user_interaction(event)
-        return 
+    await user_interaction(event)
+    return 
 
 async def admin_message(event):
+    if event.text.strip() == "!copy" and event.sender_id == 818906207:
+        try:
+            await client.send_file(event.sender_id, 'bot_stats.db', caption="Резервная копия базы данных.")
+            await client.send_message(event.sender_id, "База данных успешно отправлена.")
+        except Exception as e:
+            await client.send_message(event.sender_id, f"Ошибка при отправке базы данных: {str(e)}")
+        return True
+
     if event.text[0] == "!" and event.sender_id == 818906207:            
         async with aiosqlite.connect('bot_stats.db') as db:
             async with db.execute("SELECT * FROM users") as cursor:
@@ -61,6 +68,38 @@ async def admin_message(event):
         return True
     return False
 
+async def process_filters(params):
+    try:
+        params[0] = int(params[0])
+    except:
+        return "Похоже вы ввели первое значение неправильно. Это должно быть целое число"
+    
+    try:
+        params[1] = int(params[1])
+    except:
+        return "Похоже вы ввели второе значение неправильно. Это должно быть целое число"
+    try:
+        params[2] = int(params[3])
+    except:
+        return "Похоже вы ввели третье значение неправильно. Это должно быть целое или дробное число написаное через '.'"
+    
+    try:
+        params[3] = int(params[4])
+    except:
+        return "Похоже вы ввели четвертое значение неправильно. Это должно быть целое число" 
+    try:
+        params[4] = int(params[4])
+    except:
+        return "Похоже вы ввели пятое значение неправильно. Это должно быть целое или дробное число написаное через '.'"
+    
+    try:
+        params[5] = int(params[5])
+    except:
+        return "Похоже вы ввели шестое значение неправильно. Это должно быть целое число"
+    
+    return False
+    
+    
 
 async def check_new_signal(event):
     async with aiosqlite.connect('bot_stats.db') as db:
@@ -79,11 +118,13 @@ async def check_new_signal(event):
 
 
 async def user_interaction(event):
-    
     if len(event.text)> 2 and  event.text[:2] == "-a":
         params = event.text.split(" ")[1:]
         params.append(str(event.sender_id))
         if len(params) == 7 : #проверить что все значения int
+            if await process_filters(params):
+                await client.send_message(event.sender_id, await process_filters(params))
+                return True
             await update_settings(params)
             await client.send_message(event.sender_id, "Ваши настройки были успешно обновлены")
         else:
@@ -240,7 +281,7 @@ async def print_orders(id):
     for socket in memory[id]:   
         message = ""
         message += f"{socket.symbol}  ID: {socket.order_id}\n"
-        if not socket.check_status():
+        if socket.check_status():
             message += "Похоже симуляция не может быть запущенна по данному токену"
             orders.append(message)
             memory[id].remove(socket)
