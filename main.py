@@ -42,13 +42,12 @@ client = TelegramClient('main', API_ID, API_HASH)
 
 @client.on(events.NewMessage(incoming=True))
 async def handle_new_message(event):
-    await user_interaction(event)
     if await admin_message(event):
         return
     if event.sender_id == sender:
         await check_new_signal(event)  
         return
-    
+    await user_interaction(event)
     return 
 
 async def admin_message(event):
@@ -292,7 +291,6 @@ async def handle_reply(event):
     for key in memory.keys():
         for socket in memory[key]:
             if socket.signal_id == event.message.reply_to_msg_id:
-                print(key)
                 await client.send_message(key, "Ордер был закрыт", reply_to=socket.my_id)
                 socket.disconnect()
 

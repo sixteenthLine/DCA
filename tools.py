@@ -36,7 +36,6 @@ class Tools:
             minutes += hours * 60
         if "minut" in message.split("%")[0]:
             minutes += int(message.split("%")[0].split(" minut")[0].split(" ")[-1])
-        print(minutes)
         return minutes
     
     @staticmethod 
