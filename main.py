@@ -13,7 +13,7 @@ order_id = 0
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender = -1002306843892 #-1002306843892 
+sender =-1002306843892 
 
 
 async def create_table():
@@ -42,12 +42,13 @@ client = TelegramClient('main', API_ID, API_HASH)
 
 @client.on(events.NewMessage(incoming=True))
 async def handle_new_message(event):
+    await user_interaction(event)
     if await admin_message(event):
         return
     if event.sender_id == sender:
         await check_new_signal(event)  
         return
-    await user_interaction(event)
+    
     return 
 
 async def admin_message(event):
@@ -57,6 +58,12 @@ async def admin_message(event):
             await client.send_message(event.sender_id, "База данных успешно отправлена.")
         except Exception as e:
             await client.send_message(event.sender_id, f"Ошибка при отправке базы данных: {str(e)}")
+        return True
+
+    if event.text.strip() == "!reset" and event.sender_id == 818906207:
+        for key in memory.keys():
+            memory[key] = []
+        await client.send_message(818906207, "Память было очищена")
         return True
 
     if event.text[0] == "!" and event.sender_id == 818906207:            
@@ -79,12 +86,12 @@ async def process_filters(params):
     except:
         return "Похоже вы ввели второе значение неправильно. Это должно быть целое число"
     try:
-        params[2] = int(params[3])
+        params[2] = int(params[2])
     except:
         return "Похоже вы ввели третье значение неправильно. Это должно быть целое или дробное число написаное через '.'"
     
     try:
-        params[3] = int(params[4])
+        params[3] = int(params[3])
     except:
         return "Похоже вы ввели четвертое значение неправильно. Это должно быть целое число" 
     try:
@@ -102,17 +109,19 @@ async def process_filters(params):
     
 
 async def check_new_signal(event):
+    if event.message.reply_to_msg_id:
+        await handle_reply(event)
+        return
     async with aiosqlite.connect('bot_stats.db') as db:
         async with db.execute("SELECT * FROM users") as cursor:
             rows = await cursor.fetchall()  
             msg = await constract_signal_message(remove_formatting(event.text))
             for row in rows: 
                 if tools.Tools.isValidMessage(remove_formatting(event.text), row[1], row[2], row[3]):
-                    print(msg)
-                    await client.send_message(row[0], msg)
+                    msg = await client.send_message(row[0], msg)
                     if row[4]:
-                        if tools.Tools.has_mexc(event.text):
-                            await add_to_memmory(row[0], remove_formatting(event.text))  
+                        if tools.Tools.has_mexc(remove_formatting(event.text)):
+                            await add_to_memmory(row[0], remove_formatting(event.text), msg.id, event.message.id)  
                         else: 
                             await client.send_message(event.sender_id, "Внимание данного токена на на MEXC FUTURES!!!")
 
@@ -178,7 +187,7 @@ async def user_interaction(event):
         msg = """
 1 - Насколько быстро и точно работает симуляция открытия бота? 
 
-Получения сигнала до момента открытия симуляции и получения данных проходит в среднем менее секунд, а в хужших сценариях около 15 секунд. В любом из случаев время задержки невероятно мало. Что делает их очень точными.
+Получения сигнала до момента открытия симуляции и получения данных проходит в среднем менее секунды, а в худших сценариях около 15 секунд. В любом из случаев время задержки невероятно мало. Что делает их очень точными.
 
 2 - Как работает симуляция stop loss и take profit?
 
@@ -186,7 +195,7 @@ async def user_interaction(event):
 
 3 - Мне не нужны все фильтры могу ли я их не устанавливать?
 
-Пока что нет вам прийдется написать все значения. Просто поставьте очень большие или очень маленькие значения.
+Пока что нет вам придется написать все значения. Просто поставьте очень большие или очень маленькие значения.
 
 4 - По каким монетам бот мониторит сигналы?
 
@@ -203,7 +212,7 @@ async def user_interaction(event):
             id = int(event.text.split(" ")[1])
             await client.send_message(event.sender_id, await remove_order(event.sender_id, id))  
         except:
-            await client.send_message(event.sender_id, "Похоже вы неправльно введи id")
+            await client.send_message(event.sender_id, "Похоже вы неправильно ввели id")
         return True
 
     await client.send_message(event.sender_id, "Команда не распознана. Введите -h для списка всех команд")  
@@ -222,19 +231,22 @@ async def print_user_account(id):
                     msg += "\nSimulate - " + str(result[3])
                     msg+= "\nSimulating orger amount - " + str(result[4])
                     msg += "\nSholder - " + str(result[5])
-                    msg += "\nTotal profit - " + str(result[6])
+                    msg += "\nTotal profit - " + str(result[6]) + "$"
                 else:
-                    msg = "У нас неи никаких фильтров используйте -a чтобы создать их"
+                    msg = "У вас нет никаких фильтров используйте -a чтобы создать их"
                 return msg
             
-async def constract_signal_message(event_message):
-    message = event_message.split("GMT")[0] + "GMT"
-    if "Promo" in event_message:
-        message = event_message.split("Promo")[0] + "Amount:"+ event_message.split("Promo")[1].split("Amount:")[1].split("GMT")[0] + "GMT"
-    else :
-        message = event_message.split("GMT")[0] + "GMT"
-    
-    return message
+async def constract_signal_message(event_message):\
+
+    try:
+        message = event_message.split("GMT")[0] +"GMT"+event_message.split("GMT")[1]+ "GMT"
+        if "Promo" in event_message:
+            message = event_message.split("Promo")[0] + "Amount:"+ event_message.split("Promo")[1].split("Amount:")[1].split("GMT")[0] + "GMT" +event_message.split("GMT")[1]+ "GMT"
+        else :
+            message = event_message.split("GMT")[0] + "GMT" +event_message.split("GMT")[1]+ "GMT"
+        return message
+    except:
+        return event_message
 async def get_sholder_and_amount(id):
      async with aiosqlite.connect('bot_stats.db') as db:
             async with db.execute('''
@@ -276,18 +288,27 @@ async def add_to_total(id, profit):
                         (res,id))
                 await db.commit()
 
+async def handle_reply(event):
+    for key in memory.keys():
+        for socket in memory[key]:
+            if socket.signal_id == event.message.reply_to_msg_id:
+                print(key)
+                await client.send_message(key, "Ордер был закрыт", reply_to=socket.my_id)
+                socket.disconnect()
+
+
 async def print_orders(id):
-    orders = [f"На данный момен открыто {len(memory[id])} сделок"]
+    orders = [f"На данный момент открыто {len(memory[id])} сделок"]
     for socket in memory[id]:   
         message = ""
         message += f"{socket.symbol}  ID: {socket.order_id}\n"
         if socket.check_status():
-            message += "Похоже симуляция не может быть запущенна по данному токену"
+            message += "Похоже симуляция не может быть запущена по данному токену"
             orders.append(message)
             memory[id].remove(socket)
             continue
         if not socket.first :  
-            message += "Подождиде пару секунд ордер на этот токен не успел открыться"
+            message += "Подождите пару секунд ордер на этот токен не успел открыться"
             orders.append(message)
             continue
         if socket.profit:
@@ -312,11 +333,11 @@ async def print_orders(id):
     return orders
         
 
-async def add_to_memmory(id, message):
+async def add_to_memmory(id, message, my_id, signal_id):
     global order_id
     order_id +=1
     amount, sholder = await get_sholder_and_amount(id)
-    ws = price_monitoring.start_connection(message, amount, sholder, order_id)
+    ws = price_monitoring.start_connection(message, amount, sholder, order_id, my_id, signal_id)
     if id not in memory:
         memory[id] = []
     memory[id].append(ws)

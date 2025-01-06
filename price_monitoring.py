@@ -3,11 +3,13 @@ import json
 import threading
 import tools
 import time
+from telethon.tl.types import MessageEntityBold
+from telethon.tl.custom import Button
 
 websocket_url = "wss://wbs.mexc.com/ws"
 
 class WebSocketClient:
-    def __init__(self, message, amount, sholder, order_id):
+    def __init__(self, message, amount, sholder, order_id, my_id, signal_id):
         self.symbol = tools.Tools.getSymbol(message).upper()
         self.ws = None
         self.thread = None
@@ -17,6 +19,8 @@ class WebSocketClient:
         self.amount = amount
         self.valid_tocken = True
         self.order_id = order_id
+        self.my_id = my_id
+        self.signal_id = signal_id
         self.time = time.time()
         self.data = None
 
@@ -77,9 +81,9 @@ class WebSocketClient:
     def get_current_profit(self):
 
         if (self.direction):
-            return (self.first/self.last-1)*(self.sholder*self.amount)
+            return (self.first/self.last-1)*(self.sholder*self.amount) - self.sholder*self.amount*0.0002
         else:
-             return (self.last/self.first-1)*(self.sholder*self.amount)
+             return (self.last/self.first-1)*(self.sholder*self.amount) - self.sholder*self.amount*0.0002
         
 
 
@@ -127,7 +131,7 @@ class WebSocketClient:
                 self.thread.join()
             return
 
-        self.profit = self.get_current_profit()
+        self.profit = self.get_current_profit() - self.amount*self.sholder*0.0002
 
         self.running = False
         if self.ws:
@@ -136,8 +140,8 @@ class WebSocketClient:
             self.thread.join()
         print(f"Подключение закрыто для {self.symbol}")
 
-def start_connection(message, amount, sholder, order_id):
-    client = WebSocketClient(message, amount, sholder, order_id)
+def start_connection(message, amount, sholder, order_id, my_id, signal_id):
+    client = WebSocketClient(message, amount, sholder, order_id, my_id, signal_id)
     print("Новый объект веб сокета успешно создан")
     client.connect()
     print("Клиент подключен")

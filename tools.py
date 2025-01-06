@@ -24,7 +24,7 @@ class Tools:
     @staticmethod
     def isCanceledPossible(message):
         if "which is" in message :
-            if int(message.split(" which is ")[1].split("%")[0]) == 100:
+            if int(message.split(" which is ")[1].split("%")[0]) == 110:
                 return False
         return True
 
@@ -40,8 +40,8 @@ class Tools:
         return minutes
     
     @staticmethod 
-    def has_mexc(message):
-        return "MEXC" in message
+    def has_mexc(message):  
+        return "Futures: MEXC" in message
 
     @staticmethod
     def isValidMessage(message, sum, time, price_change):
