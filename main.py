@@ -13,7 +13,7 @@ order_id = 0
 memory = {}
 API_ID = '27805165'
 API_HASH = '18cc81d866b21840ea43a04965c6665e'
-sender =-1002306843892 
+sender = 818906207
 
 
 async def create_table():
@@ -23,6 +23,7 @@ async def create_table():
                                 sum INTEGER,
                                 time INTEGER,
                                 price_change FLOAT,
+                                frequency INTEGER,
                                 simulate INTEGER,
                                 amount FLOAT,
                                 sholder INTEGER,
@@ -85,21 +86,27 @@ async def process_filters(params):
     except:
         return "Похоже вы ввели второе значение неправильно. Это должно быть целое число"
     try:
-        params[2] = int(params[2])
+        params[2] = float(params[2])
     except:
         return "Похоже вы ввели третье значение неправильно. Это должно быть целое или дробное число написаное через '.'"
     
+
     try:
         params[3] = int(params[3])
     except:
         return "Похоже вы ввели четвертое значение неправильно. Это должно быть целое число" 
+    
     try:
         params[4] = int(params[4])
     except:
-        return "Похоже вы ввели пятое значение неправильно. Это должно быть целое или дробное число написаное через '.'"
-    
+        return "Похоже вы ввели четвертое значение неправильно. Это должно быть целое число" 
     try:
         params[5] = int(params[5])
+    except:
+        return "Похоже вы ввели пятое значение неправильно. Это должно быть целое число"
+    
+    try:
+        params[6] = int(params[6])
     except:
         return "Похоже вы ввели шестое значение неправильно. Это должно быть целое число"
     
@@ -116,20 +123,20 @@ async def check_new_signal(event):
             rows = await cursor.fetchall()  
             msg = await constract_signal_message(remove_formatting(event.text))
             for row in rows: 
-                if tools.Tools.isValidMessage(remove_formatting(event.text), row[1], row[2], row[3]):
+                if tools.Tools.isValidMessage(remove_formatting(event.text), row[1], row[2], row[3], row[4]):
                     msg = await client.send_message(row[0], msg)
-                    if row[4]:
+                    if row[5]:
                         if tools.Tools.has_mexc(remove_formatting(event.text)):
                             await add_to_memmory(row[0], remove_formatting(event.text), msg.id, event.message.id)  
                         else: 
-                            await client.send_message(event.sender_id, "Внимание данного токена на на MEXC FUTURES!!!")
+                            await client.send_message(row[0], "Внимание данного токена на на MEXC FUTURES!!!")
 
 
 async def user_interaction(event):
     if len(event.text)> 2 and  event.text[:2] == "-a":
         params = event.text.split(" ")[1:]
         params.append(str(event.sender_id))
-        if len(params) == 7 : #проверить что все значения int
+        if len(params) == 8 : #проверить что все значения int
             if await process_filters(params):
                 await client.send_message(event.sender_id, await process_filters(params))
                 return True
@@ -155,13 +162,14 @@ async def user_interaction(event):
 (Минимальная цена ордеров что вас интересует в тысячах)
 (Максимально время ордера в минутах)
 (Минимальное потенциальное изминение цены в %) 
+(Минимальный Frequency на 60 секунд)
 (Xотите ли вы симулировать открытие сделки? 0-нет 1-да)
 (Сума на которую вы бы хотели симулировать открытие сделки)
 (Плечо под которое вы бы открывали позицию)
                     
 Пример правильного запроса:
--a 300 90 5 1 100 20
-(Всего вы должны передать боту 6 значений) 
+-a 300 90 5 3500 1 100 20
+(Всего вы должны передать боту 7 значений) 
 
 -c Данные моего аккаунта (Фильтры/Прибыль)                                  
 
@@ -221,16 +229,17 @@ async def user_interaction(event):
 async def print_user_account(id):
      async with aiosqlite.connect('bot_stats.db') as db:
             async with db.execute('''
-                SELECT sum, time, price_change, simulate, amount, sholder, total FROM users WHERE user_id = ?''', (id,)) as cursor:
+                SELECT sum, time, price_change, frequency, simulate, amount, sholder, total FROM users WHERE user_id = ?''', (id,)) as cursor:
                 result = await cursor.fetchone()
                 if result:
                     msg = "Minimum target amount - " + str(result[0])
                     msg += "\nTime limit - " + str(result[1])
                     msg += "\nMinimum price change - " + str(result[2])
-                    msg += "\nSimulate - " + str(result[3])
-                    msg+= "\nSimulating orger amount - " + str(result[4])
-                    msg += "\nSholder - " + str(result[5])
-                    msg += "\nTotal profit - " + str(result[6]) + "$"
+                    msg += "\nFrequency - " + str(result[3])
+                    msg += "\nSimulate - " + str(result[4])
+                    msg+= "\nSimulating orger amount - " + str(result[5])
+                    msg += "\nSholder - " + str(result[6])
+                    msg += "\nTotal profit - " + str(result[7]) + "$"
                 else:
                     msg = "У вас нет никаких фильтров используйте -a чтобы создать их"
                 return msg
@@ -256,22 +265,22 @@ async def get_sholder_and_amount(id):
 async def update_settings(params):
     async with aiosqlite.connect('bot_stats.db') as db:
             async with db.execute('''
-                SELECT sum FROM users WHERE user_id = ?''', (int(params[6]),)) as cursor:
+                SELECT sum FROM users WHERE user_id = ?''', (int(params[7]),)) as cursor:
                 result = await cursor.fetchone()
 
             if not result:
                 await db.execute('''
-                    INSERT INTO users (user_id, sum, time, price_change, simulate, amount, sholder, total)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO users (user_id, sum, time, price_change, frequency, simulate, amount, sholder, total)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', 
-                        (int(params[6]), int(params[0]),int(params[1]),float(params[2]),int(params[3]),float(params[4]), int(params[5]), 0))
+                        (int(params[7]), int(params[0]),int(params[1]),float(params[2]),int(params[3]),float(params[4]), int(params[5]), int(params[6]), 0))
                 await db.commit()
             else:
                 await db.execute(f'''
                     UPDATE users
-                    SET sum = ?, time = ?, price_change = ?, simulate = ?, amount = ?, sholder = ?
+                    SET sum = ?, time = ?, price_change = ?, frequency = ?,  simulate = ?, amount = ?, sholder = ?
                     WHERE user_id = ?;''', 
-                        (int(params[0]),int(params[1]),float(params[2]),int(params[3]),float(params[4]), int(params[5]), int(params[6])))
+                        (int(params[0]),int(params[1]),float(params[2]),int(params[3]),float(params[4]), int(params[5]), int(params[6]), int(params[7])))
                 await db.commit()
 
 async def add_to_total(id, profit):

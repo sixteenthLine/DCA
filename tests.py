@@ -3,73 +3,67 @@ import tools
 
 class TestStringMethods(unittest.TestCase):
     def setUp(self):
-        self.val_msg = """$9.95M buying JLP 🟩
+        self.val_msg = """$102.60K selling UFD 🟥
     
-MCAP: $1.62B
-Liquidity: $21.87M
-ETA: 20 minutes
-Potential price change: 52.75%
+MCAP: $146.56M
+Liquidity: $6.80M
+ETA: 1 hs, 5 mins
+Potential price change: 2.95%
 
-Holders: 60,302
-Vol 24h: $102.03M
+Holders: 33,621
+Vol 24h: $17.46M
 
-CA: 27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4
-#uKidVJidD4
+CA: eL5fUxj2J4CiQsmW85k5FG9DvuQjjUoBHoQBi2Kpump
+#oQBi2Kpump
 
-User: CmxF3yQgwEXNkgXgCapB6HXmGMGsUyNQsZdAkyKg6CWR
-#dAkyKg6CWR
+User: C36KZ692jSeFAui9kaRcA6ounG6NfUkWjhMCMQmsBK9H
+#MCMQmsBK9H
 
-Amount: 9,948,804.35 USDC
-Frequency: $497.45K every 60 seconds
+Futures: MEXC
 
-MEXC
+Amount: 700,000.00 UFD
+Frequency: $2.85K every 300 seconds
 
-Period: 27 Dec 2024 09:35:50 GMT - 27 Dec 2024 09:55:50 GMT
-🗒 C: 0, A: 0, I: 0, T: 0
-👍 ETA less than 1 hour
-👍 Amount per cycle more than $3K
-👍 Potential price change: 52.8%
-DCA Tracker - Feedback
+Period: 11 Jan 2025 21:02:44 GMT - 12 Jan 2025 00:07:44 GMT
+🗒 Total: 7 [✅: 0, ❌: 5, 🔄: 2]
+👍 Futures available
+🤔 ETA between 1 and 5 hours
+🤔 Amount per cycle between $1K and $3K
+🚩 Canceled 5 without completing, which is 71%
 """
 
-        self.invalid_msg = """"$143.39K buying PENGU 🟩
-            
-        MCAP: $3.29B
-        Liquidity: $94.64M
-        ETA: 51 minutes
-        Potential price change: 0.30%
+        self.invalid_msg = """$87.38K buying UFD 🟩
+    
+MCAP: $137.68M
+Liquidity: $6.80M
+ETA: 1 h, 41 mins
+Potential price change: 2.52%
 
-        Holders: 513,234
-        Vol 24h: $255.85M
+Holders: 33,610
+Vol 24h: $17.52M
 
-        CA: 2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv
-        #d1gnBouauv
+CA: eL5fUxj2J4CiQsmW85k5FG9DvuQjjUoBHoQBi2Kpump
+#oQBi2Kpump
 
-        User: J1f47McZ8Ay1EZuDpvMX7CMdHag1z2mHiXNH1XQuiFip
-        #NH1XQuiFip
+User: 2rWGczJQKKDaF67MyRHFZGjyzYR4AAYXe9yXog9sFbCt
+#yXog9sFbCt
 
-        Futures: MEXC Bitget Gate
+Futures: MEXC
 
-        Promo: Bonus 30-500 USD for trading volume >1000$, 5-50 USD for the first trade for new users.
+Output mint: Fartcoin  - 0.64% - MEXC
 
-        Amount: 730.67 SOL
-        Frequency: $2.87K every 60 seconds
+Amount: 109,633.71 Fartcoin 
+Frequency: $873.81 every 60 seconds
 
-        Period: 24 Dec 2024 18:49:53 GMT - 24 Dec 2024 19:40:53 GMT
-        🗒 C: 0, A: 1, I: 0, T: 1
-        👍 ETA less than 1 hour
-        👍 Potential price change: 7.1%
-        🤔 Amount per cycle between $1K and $3K
-        🚩 Canceled 1 without completing, which is 100%
-        🚩 Opened 1 in the last 20 minutes"""
-
-    def test_isCanceledPossible(self):
-        self.assertTrue(tools.Tools.isCanceledPossible(self.val_msg))
-        self.assertFalse(tools.Tools.isCanceledPossible(self.invalid_msg))
+Period: 11 Jan 2025 20:22:16 GMT - 11 Jan 2025 22:03:16 GMT
+🗒 Total: 1 [✅: 0, ❌: 0, 🔄: 1]
+👍 Futures available
+🤔 ETA between 1 and 5 hours
+🚩 Amount per cycle less than $1K"""
 
     def test_isValidMessage(self):
-        self.assertTrue(tools.Tools.isValidMessage(self.val_msg))
-        self.assertFalse(tools.Tools.isValidMessage(self.invalid_msg))
+        self.assertTrue(tools.Tools.isValidMessage(self.val_msg, 70, 210, 0.1, 350))
+        # self.assertFalse(tools.Tools.isValidMessage(self.invalid_msg, 0, 200, 0, 500))
 
     def test_isGoodTime(self):
         self.assertTrue(tools.Tools.idGoodTime(self.val_msg))

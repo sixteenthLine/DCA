@@ -1,41 +1,39 @@
-import ccxt
-import tools
+import time
+import hashlib
+import hmac
+import requests
 
+API_KEY = 'mx0vglfTMsVkaZ2SyY'
+SECRET_KEY = '9edbc397489d4975a2afa89a11ffe6b3'
 
-api_key = 'ВАШ_API_KEY'
-secret_key = 'ВАШ_SECRET_KEY'
+BASE_URL = 'https://contract.mexc.com/api/v1'
 
-exchange = ccxt.mexc({
-    'apiKey': api_key,
-    'secret': secret_key,
-    'enableRateLimit': True,
-})
+def generate_signature(params, secret):
+    query_string = '&'.join([f"{key}={value}" for key, value in sorted(params.items())])
+    return hmac.new(secret.encode(), query_string.encode(), hashlib.sha256).hexdigest()
 
-def open_position(message):
-    if api_key == 'ВАШ_API_KEY':
-        raise Exception("traiding bot doesn't setup yet")
-    exchange.fapiPrivate_post_leverage({
-        "symbol": tools.Tools.getSymbol(message),
-        "leverage": leverage
-    })
-    order = tools.Tools.createOrder(message)
-    return order
+def get_futures_balance():
+    endpoint = '/account/balance'
+    params = {
+        'api_key': API_KEY,
+        'timestamp': int(time.time() * 1000),  
+    }
 
+    params['sign'] = generate_signature(params, SECRET_KEY)
 
+    try:
+        response = requests.get(BASE_URL + endpoint, params=params)
+        response.raise_for_status()  
+        data = response.json()
+        if data.get('code') == 200:  
+            return data['data']  
+        else:
+            print(f"Ошибка: {data.get('msg')}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка запроса: {e}")
+        return None
 
-def set_stop_loss(symbol, amount, stop_price, side):
-    params = {"stopPrice": stop_price}
-    order = exchange.create_order(
-        symbol=symbol,
-        type='STOP_MARKET',
-        side=side,
-        amount=amount,
-        params=params
-    )
-    return order
-
-symbol = 'BTC/USDT'
-leverage = 20
-amount = 0.001
-side = 'buy'  
-
+balance = get_futures_balance()
+if balance:
+    print("Фьючерсный баланс:", balance)
