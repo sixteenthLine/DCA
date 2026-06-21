@@ -3,8 +3,8 @@ import hashlib
 import hmac
 import requests
 
-API_KEY = 'mx0vglfTMsVkaZ2SyY'
-SECRET_KEY = '9edbc397489d4975a2afa89a11ffe6b3'
+API_KEY = ''
+SECRET_KEY = ''
 
 BASE_URL = 'https://contract.mexc.com/api/v1'
 
